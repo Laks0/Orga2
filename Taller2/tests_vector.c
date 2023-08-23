@@ -54,16 +54,16 @@ void test_son_iguales(void) {
     push_back(mi_vectorC, 3);
 
     if (son_iguales(mi_vectorA, mi_vectorB) != 1) {
-        printf("Fallo en test_son_iguales\n");
+        printf("Fallo en test_son_iguales en test 1\n");
         exit(1);
     }
     
     if (son_iguales(mi_vectorA, mi_vectorC) != 0) {
-        printf("Fallo en test_son_iguales\n");
+        printf("Fallo en test_son_iguales en test 2\n");
         exit(1);
     }
     if (son_iguales(mi_vectorC, mi_vectorB) != 0) {
-        printf("Fallo en test_son_iguales\n");
+        printf("Fallo en test_son_iguales en test 3\n");
         exit(1);
     }
     
