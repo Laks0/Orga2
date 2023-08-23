@@ -22,14 +22,14 @@ uint32_t longitud(lista_t* lista) {
 
 void agregar_al_final(lista_t* lista, uint32_t* arreglo, uint64_t longitud) {
     nodo_t* current = lista->head;
-    nodo_t* temporal;
+    nodo_t* anterior;
     while(current != NULL){
-        temporal = current;
+        anterior = current;
         current = current->next;
     }
     nodo_t* nuevo = malloc(sizeof(nodo_t));
     nuevo->arreglo = arreglo; nuevo->longitud = longitud; nuevo->next = NULL;
-    temporal->next = nuevo;
+    anterior->next = nuevo;
 }
 
 nodo_t* iesimo(lista_t* lista, uint32_t i) {

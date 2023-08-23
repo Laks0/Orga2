@@ -1,1 +1,6 @@
 *.o
+
+Taller2/tests_lista_enlazada
+Taller2/tests_contar_espacios
+Taller2/tests_vector
+Taller2/tests_classify_chars
