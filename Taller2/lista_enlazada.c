@@ -28,7 +28,9 @@ void agregar_al_final(lista_t* lista, uint32_t* arreglo, uint64_t longitud) {
         current = current->next;
     }
     nodo_t* nuevo = malloc(sizeof(nodo_t));
-    nuevo->arreglo = arreglo; nuevo->longitud = longitud; nuevo->next = NULL;
+    nuevo->arreglo = malloc(sizeof(uint32_t)*longitud);
+    // Falta copiar el contenido del arreglo.
+    nuevo->longitud = longitud; nuevo->next = NULL;
     anterior->next = nuevo;
 }
 
