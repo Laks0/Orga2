@@ -29,10 +29,10 @@ cantidad_total_de_elementos:
 	xor rax, rax
 
 	mov rbx, [rdi]
-	xor rbp, rbp
+	xor r12, r12 ; r12 = 0
 
 	.ciclo:
-	cmp rbx, rbp
+	cmp rbx, r12
 	je .fin
 	add eax, [rbx + LONGITUD_OFFSET]
 	mov rbx, [rbx]
@@ -53,10 +53,10 @@ push rbp
 	xor rax, rax
 
 	mov rbx, [rdi]
-	xor rbp, rbp
+	xor r12, r12 ; r12 = 0
 
 	.ciclo:
-	cmp rbx, rbp
+	cmp rbx, r12
 	je .fin
 	add eax, [rbx + PACKED_LONGITUD_OFFSET]
 	mov rbx, [rbx]
@@ -65,6 +65,5 @@ push rbp
 	.fin:
 	add rsp, 8
 	pop rbp
-	ret
 	ret
 
