@@ -46,7 +46,7 @@ cantidad_total_de_elementos:
 ;extern uint32_t cantidad_total_de_elementos_packed(packed_lista_t* lista);
 ;registros: lista[?]
 cantidad_total_de_elementos_packed:
-push rbp
+    push rbp
 	mov rbp, rsp
 	sub rsp, 8
 
