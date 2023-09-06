@@ -1,7 +1,3 @@
-section .rodata
-	uno: times 16 db 0x01
-	
-
 section .text
 
 	%define offset_terna 16
@@ -18,25 +14,31 @@ checksum_asm:
 	pcmpeqd xmm8, xmm8
 	mov r8, rdi
 
-	.ciclo:	
-		pmovsxwd xmm0, [r8]					;guardamos los primeros 4 a en xmm0
-		pmovsxwd xmm1, [r8 + offset_terna]	;guardamos los primeros 4 b en xmm1
-		movdqu xmm2, [r8 + offset_terna*2]	;guardamos los primeros 4 c en xmm2
+	.ciclo:
+		movdqu xmm6, [r8]                ; xmm6 = A
+		movdqu xmm7, [r8+offset_terna]   ; xmm7 = B
+		movdqu xmm2, [r8+offset_terna*2] ; xmm2 = C[1...4]
+		movdqu xmm3, [r8+offset_terna*3] ; xmm3 = C[5...8]
+
+		pmovsxwd xmm0, xmm6 ;guardamos los primeros 4 a en xmm0
+		pmovsxwd xmm1, xmm7 ;guardamos los primeros 4 b en xmm1
 		paddd xmm0, xmm1
-		pslld xmm0, 3						; multiplicamos xmm0 por 8
-		pcmpeqd xmm0, xmm2					
+		pslld xmm0, 3       ;multiplicamos xmm0 por 8
+		pcmpeqd xmm0, xmm2
 		pand xmm8, xmm0
 
-		add r8, 8
-		pmovsxwd xmm0, [r8]					;guardamos los segundos 4 a en xmm0
-		pmovsxwd xmm1, [r8 + offset_terna]	;guardamos los segundos 4 b en xmm1
-		movdqu xmm2, [r8 + offset_terna*2]	;guardamos los segundos 4 c en xmm2
+		; Invertimos el contenido de A y B para desempaquetar los segundos
+		pshufd xmm6, xmm6, 01001110b
+		pshufd xmm7, xmm7, 01001110b
+
+		pmovsxwd xmm0, xmm6 ;guardamos los segundos 4 a en xmm0
+		pmovsxwd xmm1, xmm7 ;guardamos los segundos 4 b en xmm1
 		paddd xmm0, xmm1
-		pslld xmm0, 3						; multiplicamos xmm0 por 8
-		pcmpeqd xmm0, xmm2					
+		pslld xmm0, 3       ;multiplicamos xmm0 por 8
+		pcmpeqd xmm0, xmm3
 		pand xmm8, xmm0
 
-		add r8, 56
+		add r8, 64
 	loop .ciclo
 
 	packusdw xmm8, xmm8
