@@ -41,7 +41,7 @@ checksum_asm:
 		add r8, 64
 	loop .ciclo
 
-	packusdw xmm8, xmm8
+	packssdw xmm8, xmm8
 	movq r9, xmm8
 	inc r9
 	cmp r9, 0
