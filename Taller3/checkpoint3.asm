@@ -32,11 +32,11 @@ cantidad_total_de_elementos:
 	xor r12, r12 ; r12 = 0
 
 	.ciclo:
-	cmp rbx, r12
-	je .fin
-	add eax, [rbx + LONGITUD_OFFSET]
-	mov rbx, [rbx]
-	jmp .ciclo
+		cmp rbx, r12
+		je .fin
+		add eax, [rbx + LONGITUD_OFFSET]
+		mov rbx, [rbx]
+		jmp .ciclo
 
 	.fin:
 	add rsp, 8

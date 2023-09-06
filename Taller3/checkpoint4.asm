@@ -95,14 +95,12 @@ strClone:
 ; void strDelete(char* a)
 ; a[rdi]
 strDelete:
-    push rbp      ;alineado a 8
+    push rbp
     mov rbp, rsp
-    sub rsp, 8    ;alineado a 16
 
     ;en rdi ya esta la direccion del string que tengo q liberar.
     call free
 
-    add rsp, 8
     pop rbp
 	ret
 

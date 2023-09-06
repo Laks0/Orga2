@@ -99,14 +99,12 @@ alternate_sum_8:
 ;void product_2_f(uint32_t * destination, uint32_t x1, float f1);
 ;registros: destination[?], x1[?], f1[?]
 product_2_f:
-
 	cvtsi2ss xmm1, rsi 	;convertimos rsi a float
 	mulss xmm1, xmm0	;multiplicamos
-	cvtss2si eax, xmm1	;convertimos a int
+	cvttss2si eax, xmm1	;convertimos a int
 	mov [rdi], eax
 
 	ret
-
 
 ;extern void product_9_f(uint32_t * destination
 ;, uint32_t x1, float f1, uint32_t x2, float f2, uint32_t x3, float f3, uint32_t x4, float f4
@@ -131,6 +129,7 @@ product_9_f:
 	cvtss2sd xmm6, xmm6
 	cvtss2sd xmm7, xmm7
 
+	pxor xmm8, xmm8
 	cvtss2sd xmm8, [rbp + 48]
 
 	;multiplicamos los doubles en xmm0 <- xmm0 * xmm1, xmmo * xmm2 , ...
@@ -165,7 +164,7 @@ product_9_f:
 	mulsd xmm0, xmm9
 
 
-	movq [rdi], xmm0
+	movsd [rdi], xmm0
 
 	; epilogo
 	add rsp, 8
