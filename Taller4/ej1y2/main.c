@@ -7,13 +7,8 @@
 #include "checkpoints.h"
 
 int main (void){
-	uint64_t* arreglo = malloc(16);
-	arreglo[0] = 15;
-	arreglo[1] = 14;
-	invertirQW_asm(arreglo);
-	assert(arreglo[0] == 14 && arreglo[1] == 15);
-	free(arreglo);
-	return 0;
+	/* Acá pueden realizar sus propias pruebas */
+	return 0;    
 }
 
 
