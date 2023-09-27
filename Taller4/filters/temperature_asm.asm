@@ -4,15 +4,18 @@ section .rodata
 
 alfa: times 8 dw 255
 tres: times 2 dq 3
-
-menorA32: times 4 db 255, 0, 0, 255
-treintaydos: times 4 dd 32
+cero: times 2 dq 0
+treintaydos:     times 4 dd 32
 dosveinticuatro: times 4 dd 224
-menorA96: times 4 dd 255, 0, 0, 255
-noventayseis: times 4 dd 96
-cientosesenta: times 4 dd 160
+noventayseis:    times 4 dd 96
+cientosesenta:   times 4 dd 160
 
-casoBase: times 4 db 0, 0, 255, 255
+
+menorA32:  times 4 db 255, 0, 0, 255
+menorA96:  times 4 db 255, 0, 0, 255
+menorA160: times 4 db 255, 255, 0, 255
+menorA224: times 4 db 0, 255, 255, 255
+casoBase:  times 4 db 0, 0, 255, 255
 
 global temperature_asm
 
@@ -36,7 +39,6 @@ temperature_asm:
     movdqu xmm1, [alfa] ;guardamos en xmm1 la constante 255
     movdqu xmm2, [tres]
     cvtdq2ps xmm2, xmm2
-    pxor xmm7, xmm7     ; xmm7 = 0
 
     .cicloVertical:
         mov r10, rdx
@@ -56,77 +58,113 @@ temperature_asm:
 
             pmovzxwd xmm0, xmm0                 ;desempaquetamos las w a dw
             
-            cvtdq2ps xmm0, xmm0
+            cvtdq2ps xmm0, xmm0                 ;convertimos a floats
             divps xmm0, xmm2                    ;dividimos por 3
 
             cvttps2dq xmm0, xmm0                ;truncamos los floats a dw enteros
+
+            pshufd xmm0, xmm0, 11011000b
 
             ;ahora tenemos las Ts de cada píxel en las dos dw más bajas
 
             pxor xmm6, xmm6 ; xmm6 guarda el resultado del filtro
 
-            ; Caso base
-            movdqu xmm4, xmm0                   ;guardamos las temperaturas en xmm4
+            ;caso base (mayor a 224)
+            movdqu xmm3, [casoBase]
+
+            movdqu xmm4, xmm0      ;movemos las Ts para podes manejarlas a gusto ;) (en xmm4 va a estar la parte q depende de t)
             movdqu xmm8, [dosveinticuatro]
-            psubw xmm4, xmm8                    ;t -= 224
-            psllw xmm4, 8                       ;ponemos el t en el componente del r
-            psllw xmm4, 2                       ;t = t*4
+            psubd xmm4, xmm8        ;T -= 224
+            pslld xmm4, 2           ;multiplicamos por 4
 
-            movdqu xmm5, [casoBase]             ;xmm5 tiene la parte que no depende de t
-            psubb xmm5, xmm4                    ;xmm5 guarda el resultado si pasan la guarda
+            pslldq xmm4, 1           ;movemos los T para poder restareslos a Red
+            psubd xmm3, xmm4
 
-            pand xmm5, xmm3                     ;0 si no corresponde, el píxel si corresponde
-            movdqu xmm6, xmm5                    ;agregamos a xmm6
+            movdqu xmm6, xmm3
 
-            ; < 160
-            movdqu xmm3, [noventayseis]         ;xmm3 guarda cuatro 96 como dw
-            pcmpgtd xmm3, xmm0                  ;xmm3 es máscara de cada t si son < 32 (0 si no y F si sí)
+            ;menor a 224
 
-            movdqu xmm4, xmm0                   ;guardamos las temperaturas en xmm4
+            movdqu xmm3, [menorA224]
+
+            movdqu xmm4, xmm0
+            movdqu xmm8, [cientosesenta]
+            psubd xmm4, xmm8
+            pslld xmm4, 2           ;multiplicamos por 4
+
+            pslldq xmm4, 2          ;movemos los T para poder restarselos a Green
+            psubd xmm3, xmm4
+
+            movdqu xmm5, [dosveinticuatro]
+            pcmpgtd xmm5, xmm0       ; nos fijamos si T < 224
+
+            pand xmm5, xmm3
+            movdqu xmm7, [cero]
+            pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
+            pand xmm6, xmm7
+            paddd xmm6, xmm5
+
+            ; menor a 160
+            movdqu xmm3, [menorA160]
+
+            movdqu xmm4, xmm0
+            movdqu xmm8, [noventayseis]
+            psubd xmm4, xmm8        ;restmos 96 a los T
+            pslld xmm4, 2           ;multiplicamos x 4
+
+            pslldq xmm4, 1          ;movemos un byte y ahora está en el rojo
+            paddd xmm3, xmm4        ;le sumamos al rojo
+            pslldq xmm4, 3          ;movemos dos bytes y ahora está en el azul
+            psubd xmm3, xmm4        ;le restmaos al azul
+
+            movdqu xmm5, [cientosesenta]
+            pcmpgtd xmm5, xmm0       ; nos fijamos si T < 160
+
+            pand xmm5, xmm3
+            movdqu xmm7, [cero]
+            pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
+            pand xmm6, xmm7
+            paddd xmm6, xmm5
+
+            ;menor a 96
+            movdqu xmm3, [menorA96]
+
+            movdqu xmm4, xmm0
             movdqu xmm8, [treintaydos]
-            psubw xmm4, xmm8                    ;t -= 32
-            psllw xmm4, 8                       ;ponemos el t en el componente del r para que clipee el shift
-            psllw xmm4, 2                       ;t = t * 4
-            pslld xmm4, 8                       ;ponemos t en el lugar de g
+            psubd xmm4, xmm8
+            pslld xmm4, 2
 
-            movdqu xmm5, [menorA96]             ;xmm5 tiene la parte que no depende de t
-            paddb xmm5, xmm4                    ;xmm5 guarda el resultado si pasan la guarda
+            pslldq xmm4, 2
+            paddd xmm3, xmm4
 
-            pand xmm5, xmm3                     ;0 si no corresponde, el píxel si corresponde
-            movdqu xmm6, xmm5                    ;agregamos a xmm6
+            movdqu xmm5, [noventayseis]
+            pcmpgtd xmm5, xmm0       ; nos fijamos si T < 96
 
-            ; < 96
-            movdqu xmm3, [noventayseis]         ;xmm3 guarda cuatro 96 como dw
-            pcmpgtd xmm3, xmm0                  ;xmm3 es máscara de cada t si son < 32 (0 si no y F si sí)
-
-            movdqu xmm4, xmm0                   ;guardamos las temperaturas en xmm4
-            movdqu xmm8, [treintaydos]
-            psubw xmm4, xmm8                    ;t -= 32
-            psllw xmm4, 8                       ;ponemos el t en el componente del r para que clipee el shift
-            psllw xmm4, 2                       ;t = t * 4
-            pslld xmm4, 8                       ;ponemos t en el lugar de g
-
-            movdqu xmm5, [menorA96]             ;xmm5 tiene la parte que no depende de t
-            paddb xmm5, xmm4                    ;xmm5 guarda el resultado si pasan la guarda
-
-            pand xmm5, xmm3                     ;0 si no corresponde, el píxel si corresponde
-            movdqu xmm6, xmm5                    ;agregamos a xmm6
+            pand xmm5, xmm3
+            movdqu xmm7, [cero]
+            pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
+            pand xmm6, xmm7
+            paddd xmm6, xmm5
             
-            ; < 32
-            movdqu xmm3, [treintaydos]          ;xmm3 guarda cuatro 32 como dw
-            pcmpgtd xmm3, xmm0                  ;xmm3 es máscara de cada t si son < 32 (0 si no y F si sí)
+            ;menor a 32
+            movdqu xmm3, [menorA32]
 
-            movdqu xmm4, xmm0                   ;guardamos las temperaturas en xmm4
-            pslld xmm4, 24                      ;ponemos el t en el componente del b
-            psllw xmm4, 2                       ;multiplica t*4 (y el overflow desaparece porque está al borde de la word)
-            
-            movdqu xmm5, [menorA32]             ;xmm5 tiene la parte que no depende de t
-            paddb xmm5, xmm4                    ;xmm5 guarda el resultado si pasan la guarda
+            movdqu xmm4, xmm0
+            pslld xmm4, 2
 
-            pand xmm5, xmm3                     ;0 si no corresponde, el píxel si corresponde
-            movdqu xmm6, xmm5                   ;agregamos a xmm6
+            pslldq xmm4, 3
+            paddd xmm3, xmm4
 
-            ; el resto de las guardas
+            movdqu xmm5, [treintaydos]
+            pcmpgtd xmm5, xmm0       ; nos fijamos si T < 32
+
+            pand xmm5, xmm3
+            movdqu xmm7, [cero]
+            pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
+            pand xmm6, xmm7
+            paddd xmm6, xmm5
+
+
+
 
             add rdi, offset_pixel * 2
             movq [rsi], xmm6
