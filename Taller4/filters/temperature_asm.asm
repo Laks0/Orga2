@@ -4,7 +4,6 @@ section .rodata
 
 alfa: times 8 dw 255
 tres: times 2 dq 3
-cero: times 2 dq 0
 treintaydos:     times 4 dd 32
 dosveinticuatro: times 4 dd 224
 noventayseis:    times 4 dd 96
@@ -44,7 +43,7 @@ temperature_asm:
         mov r10, rdx
         .cicloHorizontal:
             movdqu xmm0, [rdi]
-            pshufd xmm0, xmm0, 01001110b        ;lo giramos para agarrar los dos pixels mas significativos 
+	    ; Por la endianness, los primeros dos píxeles quedan en la parte baja de xmm0
             pmovzxdq xmm0, xmm0                 ;extendemos los pixels de dw a qw
 
             pshufd xmm0, xmm0, 11011000b        ;pone los dos píxeles en la parte baja
@@ -69,6 +68,8 @@ temperature_asm:
 
             pxor xmm6, xmm6 ; xmm6 guarda el resultado del filtro
 
+	    ; Por razones de fuerza mayor, se interpretan las componentes de una dobleword de xmm6 como ARGB
+
             ;caso base (mayor a 224)
             movdqu xmm3, [casoBase]
 
@@ -77,7 +78,7 @@ temperature_asm:
             psubd xmm4, xmm8        ;T -= 224
             pslld xmm4, 2           ;multiplicamos por 4
 
-            pslldq xmm4, 1           ;movemos los T para poder restareslos a Red
+            pslldq xmm4, 2           ;movemos los T para poder restareslos a Red
             psubd xmm3, xmm4
 
             movdqu xmm6, xmm3
@@ -91,17 +92,22 @@ temperature_asm:
             psubd xmm4, xmm8
             pslld xmm4, 2           ;multiplicamos por 4
 
-            pslldq xmm4, 2          ;movemos los T para poder restarselos a Green
+            pslldq xmm4, 1          ;movemos los T para poder restarselos a Green
             psubd xmm3, xmm4
 
             movdqu xmm5, [dosveinticuatro]
             pcmpgtd xmm5, xmm0       ; nos fijamos si T < 224
+	    ; | xxxx | xxxx | FFFF | 0000 |
 
             pand xmm5, xmm3
-            movdqu xmm7, [cero]
+	    ; | xxxx | xxxx | PPPP | 0000 |
+            pxor xmm7, xmm7
             pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
+	    ; | xxxx | xxxx | 0000 | FFFF |
             pand xmm6, xmm7
+	    ; | xxxx | xxxx | 0000 | PPPP |
             paddd xmm6, xmm5
+	    ; | xxxx | xxxx | PPPP | PPPP |
 
             ; menor a 160
             movdqu xmm3, [menorA160]
@@ -111,16 +117,15 @@ temperature_asm:
             psubd xmm4, xmm8        ;restmos 96 a los T
             pslld xmm4, 2           ;multiplicamos x 4
 
-            pslldq xmm4, 1          ;movemos un byte y ahora está en el rojo
-            paddd xmm3, xmm4        ;le sumamos al rojo
-            pslldq xmm4, 3          ;movemos dos bytes y ahora está en el azul
             psubd xmm3, xmm4        ;le restmaos al azul
+            pslldq xmm4, 2          ;movemos dos bytes y ahora está en el rojo
+            paddd xmm3, xmm4        ;le sumamos al rojo
 
             movdqu xmm5, [cientosesenta]
             pcmpgtd xmm5, xmm0       ; nos fijamos si T < 160
 
             pand xmm5, xmm3
-            movdqu xmm7, [cero]
+            pxor xmm7, xmm7
             pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
             pand xmm6, xmm7
             paddd xmm6, xmm5
@@ -133,14 +138,14 @@ temperature_asm:
             psubd xmm4, xmm8
             pslld xmm4, 2
 
-            pslldq xmm4, 2
+            pslldq xmm4, 1 ; Movemos un byte y ahora está en el rojo
             paddd xmm3, xmm4
 
             movdqu xmm5, [noventayseis]
             pcmpgtd xmm5, xmm0       ; nos fijamos si T < 96
 
             pand xmm5, xmm3
-            movdqu xmm7, [cero]
+            pxor xmm7, xmm7
             pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
             pand xmm6, xmm7
             paddd xmm6, xmm5
@@ -151,19 +156,16 @@ temperature_asm:
             movdqu xmm4, xmm0
             pslld xmm4, 2
 
-            pslldq xmm4, 3
-            paddd xmm3, xmm4
+            paddd xmm3, xmm4 ; Restamos al azul
 
             movdqu xmm5, [treintaydos]
             pcmpgtd xmm5, xmm0       ; nos fijamos si T < 32
 
             pand xmm5, xmm3
-            movdqu xmm7, [cero]
+            pxor xmm7, xmm7
             pcmpeqd xmm7, xmm5      ;comparamos xmm5 con 0 (en xmm7 tenemos 0 si no entro a la guarda y 1 si sí)
             pand xmm6, xmm7
             paddd xmm6, xmm5
-
-
 
 
             add rdi, offset_pixel * 2
