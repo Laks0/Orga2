@@ -42,9 +42,9 @@ temperature_asm:
     .cicloVertical:
         mov r10, rdx
         .cicloHorizontal:
-            movdqu xmm0, [rdi]
+            ;movdqu xmm0, [rdi]
 	    ; Por la endianness, los primeros dos píxeles quedan en la parte baja de xmm0
-            pmovzxdq xmm0, xmm0                 ;extendemos los pixels de dw a qw
+            pmovzxdq xmm0, [rdi]                 ;extendemos los pixels de dw a qw
 
             pshufd xmm0, xmm0, 11011000b        ;pone los dos píxeles en la parte baja
             pmovzxbw xmm0, xmm0                 ; 0r0g0b0a... Cada componente  de cada pixel está empaquetada como word
