@@ -58,7 +58,7 @@ start:
     ; (revisar las funciones definidas en a20.asm)
 
     ; COMPLETAR - Cargar la GDT
-    mov eax, GDT_DESC
+    lea eax, [GDT_DESC]
     lgdt [eax]
 
     ; COMPLETAR - Setear el bit PE del registro CR0

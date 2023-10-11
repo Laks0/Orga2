@@ -67,7 +67,7 @@
 #define DESC_TYPE_READ_WRITE   0x2
 
 /* COMPLETAR - Tamaños de segmentos */ 
-#define FLAT_SEGM_SIZE   GDT_LIMIT_4KIB(0x33100000)
+#define FLAT_SEGM_SIZE 0x33100000
 //#define VIDEO_SEGM_SIZE  ??
 
 
