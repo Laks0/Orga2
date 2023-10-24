@@ -12,9 +12,11 @@ global start
 extern A20_enable
 extern GDT_DESC
 
+extern screen_draw_layout
+
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
-;%define CS_RING_0_SEL ??   
-;%define DS_RING_0_SEL ??   
+%define CS_RING_0_SEL 0x8   
+%define DS_RING_0_SEL 24   
 
 
 BITS 16
@@ -47,10 +49,10 @@ start:
     mov ax, 1112h
     int 10h ; load 8x8 font
 
-    ; COMPLETAR - Imprimir mensaje de bienvenida - MODO REAL
+    ; COMPLETAR - Imprimir mensaje de bienve3nida - MODO REAL
     ; (revisar las funciones definidas en print.mac y los mensajes se encuentran en la
     ; sección de datos)
-    print_text_rm start_rm_msg, start_rm_len, 1, 0, 0
+    print_text_rm start_rm_msg, start_rm_len, 4, 0, 0
 
     ; COMPLETAR - Habilitar A20
     call A20_enable
@@ -62,8 +64,12 @@ start:
     lgdt [eax]
 
     ; COMPLETAR - Setear el bit PE del registro CR0
-
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
     ; COMPLETAR - Saltar a modo protegido (far jump)
+    jmp CS_RING_0_SEL:modo_protegido
+
     ; (recuerden que un far jmp se especifica como jmp CS_selector:address)
     ; Pueden usar la constante CS_RING_0_SEL definida en este archivo
 
@@ -71,21 +77,34 @@ BITS 32
 modo_protegido:
     ; COMPLETAR - A partir de aca, todo el codigo se va a ejectutar en modo protegido
     ; Establecer selectores de segmentos DS, ES, GS, FS y SS en el segmento de datos de nivel 0
+
+    mov ax, DS_RING_0_SEL
+    mov ds, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    mov ss, ax
+
     ; Pueden usar la constante DS_RING_0_SEL definida en este archivo
 
     ; COMPLETAR - Establecer el tope y la base de la pila
+    mov esp, 0x25000
+    mov ebp, esp
 
     ; COMPLETAR - Imprimir mensaje de bienvenida - MODO PROTEGIDO
+    print_text_pm start_pm_msg, start_pm_len, 4, 0, 0
+
 
     ; COMPLETAR - Inicializar pantalla
-    
-   
-    ; Ciclar infinitamente 
+    call screen_draw_layout
     mov eax, 0xFFFF
     mov ebx, 0xFFFF
     mov ecx, 0xFFFF
     mov edx, 0xFFFF
     jmp $
+    
+    ; Ciclar infinitamente 
+   
 
 ;; -------------------------------------------------------------------------- ;;
 
