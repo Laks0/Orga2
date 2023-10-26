@@ -14,6 +14,12 @@ extern GDT_DESC
 
 extern screen_draw_layout
 
+extern IDT_DESC
+extern idt_init
+
+extern pic_reset
+extern pic_enable
+
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
@@ -97,15 +103,27 @@ modo_protegido:
 
     ; COMPLETAR - Inicializar pantalla
     call screen_draw_layout
+
+    call idt_init
+
+    lea eax, [IDT_DESC]
+    lidt [eax]
+
+    call pic_reset
+    call pic_enable
+    sti
+
+    int 88
+
+
     mov eax, 0xFFFF
     mov ebx, 0xFFFF
     mov ecx, 0xFFFF
     mov edx, 0xFFFF
     jmp $
-    
-    ; Ciclar infinitamente 
-   
 
+    ; Ciclar infinitamente 
+    
 ;; -------------------------------------------------------------------------- ;;
 
 %include "a20.asm"

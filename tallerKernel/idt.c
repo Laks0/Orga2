@@ -39,26 +39,26 @@ idt_descriptor_t IDT_DESC = {sizeof(idt) - 1, (uint32_t)&idt};
 /* COMPLETAR: Dado un numero de de interrupcion asigna a `idt` la entrada
  * correspondiente con nivel 0 */
 #define IDT_ENTRY0(numero)                                                     \
- /*  idt[numero] = (idt_entry_t) {                                                \
+   idt[numero] = (idt_entry_t) {                                                \
      .offset_31_16 = HIGH_16_BITS(&_isr##numero),                               \
     .offset_15_0 = LOW_16_BITS(&_isr##numero),                                 \
     .segsel = GDT_CODE_0_SEL,                                                  \
-    .type = b01110,                                                               \
+    .type = INTERRUPT_GATE_TYPE,                                                               \
     .dpl = 0,                                                                  \
     .present = 1                                                                \
-  } */
+  }
 
 /* COMPLETAR: Dado un numero de de interrupcion asigna a `idt` la entrada
  * correspondiente con nivel 3 */
 #define IDT_ENTRY3(numero)                                                     \
-/*   idt[numero] = (idt_entry_t) {                                                \
+   idt[numero] = (idt_entry_t) {                                                \
      .offset_31_16 = HIGH_16_BITS(&_isr##numero),                               \
     .offset_15_0 = LOW_16_BITS(&_isr##numero),                                 \
     .segsel = GDT_CODE_3_SEL,                                                  \
-    .type = b01110,                                                               \
+    .type = INTERRUPT_GATE_TYPE,                                                               \
     .dpl = 3,                                                                  \
-    .present = 1  *                                                              \
-  } */
+    .present = 1                                                                \
+  } 
 
 void idt_init() {
   // Excepciones
@@ -83,10 +83,15 @@ void idt_init() {
   IDT_ENTRY0(18);
   IDT_ENTRY0(19);
   IDT_ENTRY0(20);
+  
 
   // COMPLETAR: Interrupciones de reloj y teclado
+  IDT_ENTRY0(32);
+  IDT_ENTRY0(33);
 
   // COMPLETAR: Syscalls
+  IDT_ENTRY3(88);
+  IDT_ENTRY3(98);
 }
 
 const char* code2exception[] = {"Divide Error #DE [0]",
