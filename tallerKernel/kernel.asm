@@ -112,9 +112,8 @@ modo_protegido:
     call pic_reset
     call pic_enable
     sti
-
+    
     int 88
-
 
     mov eax, 0xFFFF
     mov ebx, 0xFFFF
