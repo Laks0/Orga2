@@ -45,7 +45,7 @@ static inline void zero_page(paddr_t addr) {
 }
 
 
-void mmu_init(void) {}
+void mmu_init(void){}
 
 
 /**
@@ -53,7 +53,10 @@ void mmu_init(void) {}
  * Las páginas se obtienen en forma incremental, siendo la primera: next_free_kernel_page
  * @return devuelve la dirección de memoria de comienzo de la próxima página libre de kernel
  */
-paddr_t mmu_next_free_kernel_page(void) {
+paddr_t mmu_next_free_kernel_page(void){
+  paddr_t actual = next_free_kernel_page;
+  next_free_kernel_page += PAGE_SIZE;
+  return actual;
 }
 
 /**
@@ -61,6 +64,9 @@ paddr_t mmu_next_free_kernel_page(void) {
  * @return devuelve la dirección de memoria de comienzo de la próxima página libre de usuarix
  */
 paddr_t mmu_next_free_user_page(void) {
+  paddr_t actual = next_free_user_page;
+  next_free_user_page += PAGE_SIZE;
+  return actual;
 }
 
 /**
@@ -69,7 +75,17 @@ paddr_t mmu_next_free_user_page(void) {
  * @return devuelve la dirección de memoria de la página donde se encuentra el directorio
  * de páginas usado por el kernel
  */
-paddr_t mmu_init_kernel_dir(void) {
+paddr_t mmu_init_kernel_dir(void){
+  zero_page(KERNEL_PAGE_DIR);
+  kpd[0].attrs = MMU_P | MMU_W;
+  kpd[0].pt = ((uint32_t)KERNEL_PAGE_TABLE_0 >> 12);
+
+  for(int i = 0; i < 1024; i ++){
+    kpt[i].attrs =  MMU_P | MMU_W;
+    kpt[i].page = i;
+  }
+
+  return kpd; 
 }
 
 /**
@@ -80,7 +96,24 @@ paddr_t mmu_init_kernel_dir(void) {
  * @param phy la dirección física que debe ser accedida (dirección de destino)
  * @param attrs los atributos a asignar en la entrada de la tabla de páginas
  */
-void mmu_map_page(uint32_t cr3, vaddr_t virt, paddr_t phy, uint32_t attrs) {
+void mmu_map_page(uint32_t cr3, vaddr_t virt, paddr_t phy, uint32_t attrs){
+  pd_entry_t* pd = CR3_TO_PAGE_DIR(cr3);
+  int pd_index =  VIRT_PAGE_DIR(virt);
+  int pt_index = VIRT_PAGE_TABLE(virt);
+  pt_entry_t* pt;
+
+  if((pd[pd_index].attrs & MMU_P) == 0){
+    pt = mmu_next_free_kernel_page();
+    pd[pd_index].pt = (uint32_t)pt >> 12;
+    pd[pd_index].attrs = attrs | MMU_P;
+  }
+  else {
+    pt = (pd[pd_index].pt << 12);
+  }
+  pt[pt_index].page = (phy >> 12);
+  pt[pt_index].attrs = attrs | MMU_P;
+
+  tlbflush();
 }
 
 /**
@@ -88,8 +121,17 @@ void mmu_map_page(uint32_t cr3, vaddr_t virt, paddr_t phy, uint32_t attrs) {
  * @param virt la dirección virtual que se ha de desvincular
  * @return la dirección física de la página desvinculada
  */
-paddr_t mmu_unmap_page(uint32_t cr3, vaddr_t virt) {
+paddr_t mmu_unmap_page(uint32_t cr3, vaddr_t virt){
+  pd_entry_t* pd = CR3_TO_PAGE_DIR(cr3);
+  
+  int pd_index = VIRT_PAGE_DIR(virt);
+  pd[pd_index].attrs = pd[pd_index].attrs & ~MMU_P;
 
+  int pt_index = VIRT_PAGE_TABLE(virt);
+  pt_entry_t* pt = pd[pd_index].pt << 12;
+  pt[pt_index].attrs = pt[pt_index].attrs & ~MMU_P;
+
+  tlbflush();
 }
 
 #define DST_VIRT_PAGE 0xA00000

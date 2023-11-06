@@ -20,6 +20,8 @@ extern idt_init
 extern pic_reset
 extern pic_enable
 
+extern mmu_init_kernel_dir
+
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
@@ -104,6 +106,9 @@ modo_protegido:
     ; COMPLETAR - Inicializar pantalla
     call screen_draw_layout
 
+    
+    
+    
     call idt_init
 
     lea eax, [IDT_DESC]
@@ -111,6 +116,15 @@ modo_protegido:
 
     call pic_reset
     call pic_enable
+
+    call mmu_init_kernel_dir
+    mov cr3, eax
+
+
+    mov eax, cr0 
+    or eax, 0x80000000
+    mov cr0, eax
+
     sti
     
     int 88
