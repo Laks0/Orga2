@@ -21,13 +21,12 @@ extern pic_reset
 extern pic_enable
 
 extern mmu_init_kernel_dir
+extern copy_page
+extern mmu_init_task_dir
 
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
-
-extern copy_page
-
 
 BITS 16
 ;; Saltear seccion de datos
@@ -128,11 +127,14 @@ modo_protegido:
     mov cr0, eax
 
     sti
-    
-    push 0
-    push 0x100000000000
 
-    call copy_page
+	push 0x18000
+	call mmu_init_task_dir
+	; ahora el cr3 de la tarea está en eax
+	mov cr3, eax
+
+	mov byte [0x07000000], 0x1
+	mov byte [0x07000001], 0x1
 
     mov eax, 0xFFFF
     mov ebx, 0xFFFF

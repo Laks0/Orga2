@@ -147,13 +147,13 @@ paddr_t mmu_unmap_page(uint32_t cr3, vaddr_t virt){
  */
 void copy_page(paddr_t dst_addr, paddr_t src_addr) {          
   uint32_t cr3 = rcr3();
-  mmu_map_page(cr3, SRC_VIRT_PAGE, src_addr, MMU_W);
-  mmu_map_page(cr3, DST_VIRT_PAGE, dst_addr, MMU_W);
+  mmu_map_page(cr3, SRC_VIRT_PAGE, src_addr, MMU_W | MMU_P);
+  mmu_map_page(cr3, DST_VIRT_PAGE, dst_addr, MMU_W | MMU_P);
 
-  uint32_t* dst = DST_VIRT_PAGE;
-  uint32_t* src = SRC_VIRT_PAGE;
+  uint8_t* dst = DST_VIRT_PAGE;
+  uint8_t* src = SRC_VIRT_PAGE;
   
-  for(int i = 0; i < 128; i++){
+  for(int i = 0; i < PAGE_SIZE; i++){
     dst[i] = src[i];
   }
 
@@ -167,6 +167,32 @@ void copy_page(paddr_t dst_addr, paddr_t src_addr) {
  * @return el contenido que se ha de cargar en un registro CR3 para la tarea asociada a esta llamada
  */
 paddr_t mmu_init_task_dir(paddr_t phy_start) {
+	pd_entry_t* pd = mmu_next_free_kernel_page();
+	zero_page(pd);
+
+	// Identity mapping
+	pt_entry_t* pt = mmu_next_free_kernel_page();
+	for(int i = 0; i < 1024; i ++){
+		pt[i].attrs = MMU_P | MMU_W;
+		pt[i].page = i;
+	}
+	pd[0].attrs = MMU_P | MMU_W;
+	pd[0].pt = ((uint32_t)pt >> 12);
+
+	uint32_t cr3 = (uint32_t) pd & 0xFFFFF000;
+
+	// código
+	mmu_map_page(cr3, TASK_CODE_VIRTUAL, phy_start, MMU_U);
+	mmu_map_page(cr3, TASK_CODE_VIRTUAL + PAGE_SIZE, phy_start + PAGE_SIZE, MMU_U);
+
+	// stack
+	paddr_t stack = mmu_next_free_user_page();
+	mmu_map_page(cr3, TASK_STACK_BASE - PAGE_SIZE, stack, (MMU_W | MMU_U));
+
+	// compartida
+	mmu_map_page(cr3, TASK_SHARED_PAGE, 0x03000000, MMU_U);
+
+	return cr3;
 }
 
 // COMPLETAR: devuelve true si se atendió el page fault y puede continuar la ejecución 
@@ -174,5 +200,10 @@ paddr_t mmu_init_task_dir(paddr_t phy_start) {
 bool page_fault_handler(vaddr_t virt) {
   print("Atendiendo page fault...", 0, 0, C_FG_WHITE | C_BG_BLACK);
   // Chequeemos si el acceso fue dentro del area on-demand
-  // En caso de que si, mapear la pagina
+  if (virt >= 0x07000000 && virt < 0x07001000) {
+	  // En caso de que si, mapear la pagina
+	  mmu_map_page(rcr3(), virt, 0x3000000, MMU_W | MMU_U);
+	  return true;
+  }
+  return false;
 }
