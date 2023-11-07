@@ -143,9 +143,22 @@ paddr_t mmu_unmap_page(uint32_t cr3, vaddr_t virt){
  * @param src_addr la dirección de la página cuyo contenido queremos copiar
  *
  * Esta función mapea ambas páginas a las direcciones SRC_VIRT_PAGE y DST_VIRT_PAGE, respectivamente, realiza
- * la copia y luego desmapea las páginas. Usar la función rcr3 definida en i386.h para obtener el cr3 actual
+ * la copia y luego desmapea las páginas. Usar la función rcr3 definida en i386.h para obtener el cr3 actual.
  */
-void copy_page(paddr_t dst_addr, paddr_t src_addr) {
+void copy_page(paddr_t dst_addr, paddr_t src_addr) {          
+  uint32_t cr3 = rcr3();
+  mmu_map_page(cr3, SRC_VIRT_PAGE, src_addr, MMU_W);
+  mmu_map_page(cr3, DST_VIRT_PAGE, dst_addr, MMU_W);
+
+  uint32_t* dst = DST_VIRT_PAGE;
+  uint32_t* src = SRC_VIRT_PAGE;
+  
+  for(int i = 0; i < 128; i++){
+    dst[i] = src[i];
+  }
+
+  mmu_unmap_page(cr3, SRC_VIRT_PAGE);
+  mmu_unmap_page(cr3, DST_VIRT_PAGE);
 }
 
  /**

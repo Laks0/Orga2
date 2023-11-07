@@ -26,6 +26,8 @@ extern mmu_init_kernel_dir
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
 
+extern copy_page
+
 
 BITS 16
 ;; Saltear seccion de datos
@@ -127,7 +129,10 @@ modo_protegido:
 
     sti
     
-    int 88
+    push 0
+    push 0x100000000000
+
+    call copy_page
 
     mov eax, 0xFFFF
     mov ebx, 0xFFFF
