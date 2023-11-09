@@ -24,6 +24,8 @@ extern mmu_init_kernel_dir
 extern copy_page
 extern mmu_init_task_dir
 
+extern tss_init
+
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
@@ -125,6 +127,8 @@ modo_protegido:
     mov eax, cr0 
     or eax, 0x80000000
     mov cr0, eax
+
+    ;call tss_init
 
     sti
 
