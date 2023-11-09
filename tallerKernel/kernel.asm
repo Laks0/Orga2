@@ -131,10 +131,14 @@ modo_protegido:
 	push 0x18000
 	call mmu_init_task_dir
 	; ahora el cr3 de la tarea está en eax
-	mov cr3, eax
+    mov edi, cr3
+    mov cr3, eax
 
 	mov byte [0x07000000], 0x1
 	mov byte [0x07000001], 0x1
+
+    mov cr3, edi
+    xor eax,eax
 
     mov eax, 0xFFFF
     mov ebx, 0xFFFF

@@ -13,6 +13,7 @@ BITS 32
 ;; PIC
 extern pic_finish1
 extern kernel_exception
+extern page_fault_handler
 
 extern process_scancode
 
@@ -109,13 +110,31 @@ ISRE 10
 ISRE 11
 ISRE 12
 ISRE 13
-ISRE 14
+;ISRE 14
 ISRNE 15
 ISRNE 16
 ISRE 17
 ISRNE 18
 ISRNE 19
 ISRNE 20
+
+global _isr14
+_isr14:
+    pushad
+    mov eax, cr2
+    push eax
+    call page_fault_handler
+    add esp, 4
+    cmp al, 1
+    je .fin
+
+    call kernel_exception
+
+    .fin:
+        popad
+        add esp, 4
+        iret
+
 
 ;; Rutina de atención del RELOJ
 ;; -------------------------------------------------------------------------- ;;

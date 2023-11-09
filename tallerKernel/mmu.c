@@ -109,6 +109,7 @@ void mmu_map_page(uint32_t cr3, vaddr_t virt, paddr_t phy, uint32_t attrs){
   }
   else {
     pt = (pd[pd_index].pt << 12);
+    pd[pd_index].attrs = pd[pd_index].attrs | attrs;
   }
   pt[pt_index].page = (phy >> 12);
   pt[pt_index].attrs = attrs | MMU_P;
@@ -125,8 +126,7 @@ paddr_t mmu_unmap_page(uint32_t cr3, vaddr_t virt){
   pd_entry_t* pd = CR3_TO_PAGE_DIR(cr3);
   
   int pd_index = VIRT_PAGE_DIR(virt);
-  pd[pd_index].attrs = pd[pd_index].attrs & ~MMU_P;
-
+ 
   int pt_index = VIRT_PAGE_TABLE(virt);
   pt_entry_t* pt = pd[pd_index].pt << 12;
   pt[pt_index].attrs = pt[pt_index].attrs & ~MMU_P;
@@ -190,7 +190,7 @@ paddr_t mmu_init_task_dir(paddr_t phy_start) {
 	mmu_map_page(cr3, TASK_STACK_BASE - PAGE_SIZE, stack, (MMU_W | MMU_U));
 
 	// compartida
-	mmu_map_page(cr3, TASK_SHARED_PAGE, 0x03000000, MMU_U);
+	mmu_map_page(cr3, TASK_SHARED_PAGE, SHARED, MMU_U);
 
 	return cr3;
 }
