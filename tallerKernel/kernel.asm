@@ -25,10 +25,14 @@ extern copy_page
 extern mmu_init_task_dir
 
 extern tss_init
+extern tasks_screen_draw
 
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
 %define DS_RING_0_SEL 24   
+
+%define TASK_INIT_SEL 88 ; (11 << 3, selector de segmento de init task)
+%define TASK_IDLE_SEL 96 ; (12 << 3, selector de segmento de idle task)
 
 BITS 16
 ;; Saltear seccion de datos
@@ -128,27 +132,32 @@ modo_protegido:
     or eax, 0x80000000
     mov cr0, eax
 
-    ;call tss_init
+    call tss_init
 
     sti
 
 	push 0x18000
 	call mmu_init_task_dir
 	; ahora el cr3 de la tarea está en eax
-    mov edi, cr3
-    mov cr3, eax
+  ;  mov edi, cr3
+  ;  mov cr3, eax
 
-	mov byte [0x07000000], 0x1
-	mov byte [0x07000001], 0x1
+	;mov byte [0x07000000], 0x1
+	;mov byte [0x07000001], 0x1
 
-    mov cr3, edi
-    xor eax,eax
+	;mov cr3, edi
 
-    mov eax, 0xFFFF
-    mov ebx, 0xFFFF
-    mov ecx, 0xFFFF
-    mov edx, 0xFFFF
-    jmp $
+	call tasks_screen_draw
+
+	mov ax, TASK_INIT_SEL
+	ltr ax
+	jmp TASK_IDLE_SEL:0
+
+	mov eax, 0xFFFF
+	mov ebx, 0xFFFF
+	mov ecx, 0xFFFF
+	mov edx, 0xFFFF
+	jmp $
 
     ; Ciclar infinitamente 
     
