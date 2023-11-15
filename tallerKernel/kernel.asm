@@ -26,6 +26,8 @@ extern mmu_init_task_dir
 
 extern tss_init
 extern tasks_screen_draw
+extern sched_init
+extern tasks_init
 
 ; COMPLETAR - Definan correctamente estas constantes cuando las necesiten
 %define CS_RING_0_SEL 0x8   
@@ -33,6 +35,8 @@ extern tasks_screen_draw
 
 %define TASK_INIT_SEL 88 ; (11 << 3, selector de segmento de init task)
 %define TASK_IDLE_SEL 96 ; (12 << 3, selector de segmento de idle task)
+
+%define DIVISOR 0x800
 
 BITS 16
 ;; Saltear seccion de datos
@@ -121,6 +125,11 @@ modo_protegido:
     lea eax, [IDT_DESC]
     lidt [eax]
 
+    mov ax, DIVISOR
+    out 0x40, al
+    rol ax, 8
+    out 0x40, al
+
     call pic_reset
     call pic_enable
 
@@ -134,8 +143,6 @@ modo_protegido:
 
     call tss_init
 
-    sti
-
 	push 0x18000
 	call mmu_init_task_dir
 	; ahora el cr3 de la tarea está en eax
@@ -147,9 +154,12 @@ modo_protegido:
 
 	;mov cr3, edi
 
-	call tasks_screen_draw
+    call sched_init
+    call tasks_init
 
-	mov ax, TASK_INIT_SEL
+    call tasks_screen_draw
+
+    mov ax, TASK_INIT_SEL
 	ltr ax
 	jmp TASK_IDLE_SEL:0
 
